@@ -1,0 +1,4 @@
+pika==1.2.0
+psycopg2-binary==2.9.1
+superb-ai-label
+sqlalchemy

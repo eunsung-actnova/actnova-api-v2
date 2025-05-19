@@ -1,0 +1,170 @@
+version: '3.8'
+
+services:
+  # 메시지 큐
+  rabbitmq:
+    image: rabbitmq:3-management
+    env_file:
+      - .env
+    ports:
+      - "${RABBITMQ_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - actverse_network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # 데이터베이스
+  postgres:
+    image: postgres:13
+    env_file:
+      - .env
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - actverse_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # API 게이트웨이
+  api_gateway:
+    build:
+      dockerfile: ./api_gateway/Dockerfile
+    volumes:
+      - ./common:/app/common
+    ports:
+      - "8000:8000"
+    depends_on:
+      - rabbitmq
+      - postgres
+    env_file:
+      - .env
+    networks:
+      - actverse_network
+    restart: always
+
+  # 비디오 프로세서 워커
+  video_processor:
+    build:
+      dockerfile: ./video_processor/Dockerfile
+    depends_on:
+      - rabbitmq
+    env_file:
+      - .env
+    volumes:
+      - data_storage:/app/data
+    networks:
+      - actverse_network
+    restart: always
+
+  # 라벨링 매니저 워커
+  labeling_manager:
+    build:
+      dockerfile: ./labeling_manager/Dockerfile
+    depends_on:
+      - rabbitmq          
+    env_file:
+      - .env
+    volumes:
+      - data_storage:/app/data
+    networks:
+      - actverse_network
+    restart: always
+
+  # 라벨링 모니터링 워커
+  labeling_monitor:
+    build:
+      dockerfile: ./labeling_monitor/Dockerfile
+    depends_on:
+      - rabbitmq
+    env_file:
+      - .env
+    volumes:
+      - data_storage:/app/data
+    networks:
+      - actverse_network
+    restart: always
+
+  # 모델 트레이너 워커
+  model_trainer:
+    build:
+      dockerfile: ./model_trainer/Dockerfile
+    depends_on:
+      - rabbitmq
+    env_file:
+      - .env
+    volumes:
+      - data_storage:/app/data
+    networks:
+      - actverse_network
+    restart: always
+
+  # 모델 배포 워커
+  model_deployer:
+    build:
+      dockerfile: ./model_deployer/Dockerfile
+    depends_on:
+      - rabbitmq
+    env_file:
+      - .env
+    volumes:
+      - model_data:/app/models
+    networks:
+      - actverse_network
+    restart: always
+
+  # 모델 추론 워커
+  model_inference:
+    build:
+      dockerfile: ./model_inference/Dockerfile
+    depends_on:
+      - rabbitmq
+    env_file:
+      - .env
+    volumes:
+      - model_data:/app/models
+    networks:
+      - actverse_network
+    restart: always
+
+  event_worker:
+    build:
+      dockerfile: ./event_worker/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+    networks:
+      - actverse_network
+    restart: unless-stopped
+
+  # TODO: nvidia triton inference server
+  
+
+networks:
+  actverse_network:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
+  postgres_data:
+  model_data:
+  data_storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: C:/Users/willo/Desktop/code/actverse-api-refactoring/data_storage
+
