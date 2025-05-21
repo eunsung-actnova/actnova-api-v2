@@ -1,2 +1,5 @@
 pika==1.2.0
 psycopg2-binary==2.9.1
+python-dotenv==1.0.0
+pyyaml
+git+https://${GITHUB_TOKEN}@github.com/actnova-inc/actnova-python-sdk.git@main#egg=actnova

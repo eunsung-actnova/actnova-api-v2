@@ -4,3 +4,4 @@ pika==1.2.0
 psycopg2-binary==2.9.1
 pydantic==1.8.2
 sqlalchemy==1.4.22
+python-dotenv==1.0.0

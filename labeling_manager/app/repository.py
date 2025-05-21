@@ -23,7 +23,7 @@ class LabelTask(Base):
     status = sa.Column(
         Enum(LabellingStatus), nullable=False, default=LabellingStatus.INPROGRESS
     )
-    image_path = sa.Column(sa.String, nullable=False)
+    label_url = sa.Column(sa.String, nullable=False)
     user_id = sa.Column(sa.String, nullable=False)
     created_at = sa.Column(sa.DateTime, default=sa.func.now())
     updated_at = sa.Column(sa.DateTime, default=sa.func.now(), onupdate=sa.func.now())
@@ -47,6 +47,9 @@ class PostgresLabelTaskRepository(LabelTaskRepository):
     def __init__(self, db_url: str):
         self.engine = sa.create_engine(db_url)
         self.Session = sessionmaker(bind=self.engine)
+
+    def create_tables(self):
+        """데이터베이스 테이블을 생성합니다. 애플리케이션 시작 시 한 번만 호출해야 합니다."""
         Base.metadata.create_all(self.engine)
 
     def _get_session(self) -> Session:
@@ -54,7 +57,7 @@ class PostgresLabelTaskRepository(LabelTaskRepository):
 
     def get_label_task(self, task_id: str) -> Optional[LabelTask]:
         with self._get_session() as session:
-            return session.query(LabelTask).filter(LabelTask.id == task_id).first()
+            return session.query(LabelTask).filter(LabelTask.task_id == task_id).first()
 
     def get_label_tasks_by_status(self, status: str) -> List[LabelTask]:
         with self._get_session() as session:
@@ -66,3 +69,26 @@ class PostgresLabelTaskRepository(LabelTaskRepository):
             session.commit()
             session.refresh(task)
             return task
+        
+    def update_label_task_status(self, task_id: str, new_status: str):
+        with self._get_session() as session:
+            session.query(LabelTask).filter(LabelTask.task_id == task_id).update({LabelTask.status: new_status})
+            session.commit()
+
+
+class FakeLabelTaskRepository(LabelTaskRepository):
+    def __init__(self):
+        self.tasks: dict[str, LabelTask] = {}
+
+    def get_label_task(self, task_id: str) -> Optional[LabelTask]:
+        return self.tasks.get(task_id)
+
+    def get_label_tasks_by_status(self, status: str) -> List[LabelTask]:
+        return [
+            task for task in self.tasks.values()
+            if task.status.value == status
+        ]
+
+    def save_label_task(self, task: LabelTask) -> LabelTask:
+        self.tasks[task.task_id] = task
+        return task

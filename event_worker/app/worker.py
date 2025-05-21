@@ -22,6 +22,14 @@ def process_event(data: Dict[str, Any], event_type: str) -> bool:
     """이벤트 처리 및 다음 이벤트 발행"""
     logger.info(f"이벤트 처리: {event_type}, 데이터: {data}")
     
+    # 필수 필드 검증
+    task_id = data.get("task_id")
+    user_id = data.get("user_id")
+    
+    if not task_id or not user_id:
+        logger.error(f"필수 필드 누락: task_id={task_id}, user_id={user_id}")
+        return False
+    
     # 이벤트 워크플로우에서 다음 이벤트 정보 가져오기
     next_event = EVENT_WORKFLOW.get(event_type)
     if not next_event:
@@ -60,12 +68,12 @@ def callback(ch, method, properties, body):
         else:
             # 이벤트 처리 실패 로깅
             log_event_failed(logger, event_type, task_id)
-            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
         # 예외 발생 로깅
         log_event_failed(logger, event_type, data.get("task_id", "unknown"), str(e))
         logger.error(f"이벤트 처리 중 오류 발생: {str(e)}")
-        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
 def start_worker():

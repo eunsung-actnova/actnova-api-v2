@@ -28,6 +28,7 @@ SUBSCRIBE_EVENTS = [EVENT_MODEL_DEPLOYMENT_REQUESTED]
 def process_model_deployment_requested(data: Dict[str, Any]):
     """모델 배포 요청 이벤트 처리"""
     task_id = data.get("task_id")
+    user_id = data.get("user_id")
     model_path = data.get("model_path")
     
     try:
@@ -37,6 +38,7 @@ def process_model_deployment_requested(data: Dict[str, Any]):
         # 모델 배포 완료 이벤트 발행
         publish_event(logger, EVENT_MODEL_DEPLOYMENT_COMPLETED, {
             "task_id": task_id,
+            "user_id": user_id,
             "model_path": model_path,
             "deployment_id": f"deployment_{task_id}",
             "status": "deployed",

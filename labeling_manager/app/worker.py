@@ -3,9 +3,10 @@ import pika
 import os
 import time
 from typing import Dict, Any
+from dotenv import load_dotenv
 
 from app.labelling_manager import SuperbLabellingManager
-
+from app.repository import LabelTaskRepository, LabelTask, LabellingStatus, PostgresLabelTaskRepository
 from actverse_common.logging import (
     setup_logger, 
     log_event_received, 
@@ -23,23 +24,34 @@ from actverse_common.messaging import (
 )
 # 로거 설정
 logger = setup_logger(service_name="labeling_manager")
+load_dotenv()
 
 # 구독할 이벤트
 SUBSCRIBE_EVENTS = [EVENT_LABELING_REQUESTED]
+
+label_task_repository: LabelTaskRepository = PostgresLabelTaskRepository(os.getenv("DATABASE_URL"))
 
 def process_frames_extracted(data: Dict[str, Any]):
     """프레임 추출 완료 이벤트 처리"""
     task_id = data.get("task_id")
     frames_path = data.get("frames_path")
+    user_id = data.get("user_id")
 
     superb_labelling_manager = SuperbLabellingManager(
-        project_name="actverse_preview_dev",
-        team_name="actnova",
-        superbai_token="Bj9hCFmhLkaPS6jQqXTmR2WtOVhPCVLJ2vHyAJ83"
+        project_name=os.getenv("LABELING_PROJECT_NAME"),
+        team_name=os.getenv("LABELING_TEAM_NAME"),
+        superbai_token=os.getenv("SUPERBAI_TOKEN")
     )
+
+    logger.info(f'project name: {os.getenv("LABELING_PROJECT_NAME")}')
+    logger.info(f'team name: {os.getenv("LABELING_TEAM_NAME")}')
+    logger.info(f'superbai token: {os.getenv("SUPERBAI_TOKEN")}')
     
 
     superb_labelling_manager.upload_images(frames_path, task_id)
+    # DB에 라벨 태스크 저장
+    # TODO: 리포지토리 초기화 위치 지정.
+    label_task_repository.save_label_task(LabelTask(user_id = user_id, task_id=task_id, status=LabellingStatus.INPROGRESS.value, label_url=f"{os.getenv('DATA_STORAGE_PATH')}/{task_id}/labels"))
 
     try:
         # 라벨링 작업 생성 로직

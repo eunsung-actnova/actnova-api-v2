@@ -3,6 +3,10 @@ import pika
 import os
 import time
 from typing import Dict, Any
+from dotenv import load_dotenv
+
+from app.data_handler import YamlDataHandler
+from app.trainer import YoloTrainer
 
 from actverse_common.logging import (
     setup_logger, 
@@ -21,31 +25,61 @@ from actverse_common.messaging import (
 )
 # 로거 설정
 logger = setup_logger(service_name="model_trainer")
+load_dotenv()
 
+
+data_storage_path = os.getenv("DATA_STORAGE_PATH")
 # 구독할 이벤트
 SUBSCRIBE_EVENTS = [EVENT_MODEL_TRAINING_REQUESTED]
 
+data_handler = YamlDataHandler()
+trainer = YoloTrainer()
 
 def process_model_training_requested(data: Dict[str, Any]):
     """모델 학습 요청 이벤트 처리"""
     task_id = data.get("task_id")
+    user_id = data.get("user_id")
     label_path = data.get("label_path")
+    train_log_path = f'{data_storage_path}/train_log/{task_id}/data'
     
+    # train/test 데이터셋 분리
+    image_list, label_list = data_handler.split_data(
+                                        data_path=data_storage_path,
+                                        task_id=task_id,
+                                        train_valid_ratio=0.8
+                                        )
+    
+    # TODO: 이 save하는 부분 개선 가능 => 직접 save 없이 데이터 경로만 받아서 학습)
+    data_handler.save_data(data_path=train_log_path, 
+                            image_list=image_list, 
+                            label_list=label_list, 
+                            train_valid_ratio=0.8)
+    
+    # yaml 파일 생성
+    yaml_path = data_handler.create_yaml(data_path=f'{data_storage_path}/train_log/{task_id}')
+    
+    # 모델 학습 로직
+    trainer.train(yaml_path=f'{data_storage_path}/train_log/{task_id}/data.yaml',
+                  epochs=1, # TODO: 학습 config 지정 위치 선정 필요
+                  batch_size=1,
+                  lr=0.001,
+                  model_save_path=os.getenv("MODEL_SAVE_PATH"))
+
     try:
         # 모델 학습 로직
-        logger.info(f"모델 학습 중: {label_path}")
+        logger.info(f"모델 학습 완료: {label_path}")
         
         # 모델 학습 완료 이벤트 발행
         publish_event(logger, EVENT_MODEL_TRAINING_COMPLETED, {
             "task_id": task_id,
-            "model_path": f"/app/models/{task_id}",
+            "user_id": user_id,
+            "model_path": f"{data_storage_path}/train_log/{task_id}/model.pt",
             "status": "completed",
             "metrics": {"accuracy": 0.92, "loss": 0.08}
         })
 
-        
-        
         return True
+    
     except Exception as e:
         logger.error(f"모델 학습 중 오류: {str(e)}")
         return False

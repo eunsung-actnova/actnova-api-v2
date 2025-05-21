@@ -1,4 +1,6 @@
 pika==1.2.0
 psycopg2-binary==2.9.1
+python-dotenv==1.0.0
 superb-ai-label
 sqlalchemy
+python-dotenv==1.0.0

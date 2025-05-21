@@ -1,17 +1,32 @@
-from sqlalchemy import Column, String, Float, Integer, DateTime, Text, JSON
+from sqlalchemy import Column, String, Float, Integer, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
-import datetime
+from datetime import datetime
+from datetime import timezone
 
 Base = declarative_base()
 
 class Task(Base):
     __tablename__ = "tasks"
     
-    task_id = Column(String, primary_key=True)
-    status = Column(String, nullable=False, default="created")  # created, processing, completed, failed
-    current_step = Column(String, nullable=True)  # video_download, frame_extraction, labeling, training, deployment
-    progress = Column(Float, nullable=False, default=0.0)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-    estimated_time_remaining = Column(Integer, nullable=True)  # 남은 시간(초)
-    step_history = Column(JSON, nullable=True)  # 단계별 시작/종료 시간 추적
+    id = Column(String, primary_key=True)  # task_id를 id로 변경
+    user_id = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # relationship 설정
+    steps = relationship("TaskStep", back_populates="task")
+
+class TaskStep(Base):
+    __tablename__ = "task_steps"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    task_id = Column(String, ForeignKey("tasks.id"), nullable=False)
+    step_name = Column(String, nullable=False)  # video_download, frame_extraction, labeling, training, deployment
+    status = Column(String, nullable=False, default="pending")  # pending, processing, completed, failed
+    started_at = Column(DateTime, nullable=True)
+    finished_at = Column(DateTime, nullable=True)
+    
+    # relationship 설정
+    task = relationship("Task", back_populates="steps")

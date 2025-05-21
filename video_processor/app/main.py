@@ -1,6 +1,8 @@
 import os
 import sys
 import logging
+from dotenv import load_dotenv
+from app.worker import start_worker
 
 # 로깅 설정
 logging.basicConfig(
@@ -12,7 +14,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    from app.worker import start_worker
+    # 환경 변수 로드
+    load_dotenv()
     
-    logger.info("비디오 프로세서 워커 시작")
+    # 워커 시작
     start_worker()

@@ -64,7 +64,8 @@ services:
     env_file:
       - .env
     volumes:
-      - data_storage:/app/data
+      - data_storage:${DATA_STORAGE_PATH}
+      - ./common:/app/common
     networks:
       - actverse_network
     restart: always
@@ -78,7 +79,8 @@ services:
     env_file:
       - .env
     volumes:
-      - data_storage:/app/data
+      - data_storage:${DATA_STORAGE_PATH}
+      - ./common:/app/common
     networks:
       - actverse_network
     restart: always
@@ -92,7 +94,8 @@ services:
     env_file:
       - .env
     volumes:
-      - data_storage:/app/data
+      - data_storage:${DATA_STORAGE_PATH}
+      - ./common:/app/common
     networks:
       - actverse_network
     restart: always
@@ -106,7 +109,8 @@ services:
     env_file:
       - .env
     volumes:
-      - data_storage:/app/data
+      - data_storage:${DATA_STORAGE_PATH}
+      - ./common:/app/common
     networks:
       - actverse_network
     restart: always
@@ -121,6 +125,7 @@ services:
       - .env
     volumes:
       - model_data:/app/models
+      - ./common:/app/common
     networks:
       - actverse_network
     restart: always
@@ -135,6 +140,7 @@ services:
       - .env
     volumes:
       - model_data:/app/models
+      - ./common:/app/common
     networks:
       - actverse_network
     restart: always
@@ -146,6 +152,8 @@ services:
       - .env
     depends_on:
       - rabbitmq
+    volumes:
+      - ./common:/app/common
     networks:
       - actverse_network
     restart: unless-stopped

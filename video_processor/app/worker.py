@@ -1,14 +1,13 @@
 import json
-import pika
 import os
 import time
 import logging
+import pika
 from typing import Dict, Any
 from datetime import datetime
 
 from app.video_downloader import VercelVideoDownloader
 from app.videoframe_handler import VideoFrameHandler, NaiveVideoFrameCurator
-
 from actverse_common.logging import (
     setup_logger, 
     log_event_received, 
@@ -26,24 +25,29 @@ from actverse_common.messaging import (
     get_rabbitmq_connection
 )
 
+from dotenv import load_dotenv
+
+load_dotenv()
+ 
+# 로깅 설정                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+logger = setup_logger(service_name="video_processor")
+
+vercel_downloader = VercelVideoDownloader()
+
 # 구독할 이벤트
 SUBSCRIBE_EVENTS = [
     EVENT_VIDEO_DOWNLOAD_REQUESTED,  # 비디오 다운로드 요청 이벤트 구독
     EVENT_FRAMES_EXTRACTION_REQUESTED  # 프레임 추출 요청 이벤트 구독
 ]
 
-# 로깅 설정                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
-logger = setup_logger(service_name="video_processor")
-
-
 def process_video_download_request(data: Dict[str, Any]):
     """비디오 다운로드 요청 이벤트 처리"""
     task_id = data.get("task_id")
+    user_id = data.get("user_id")
     original_video_path = data.get("video_path")
-    download_path = data.get("download_path", f"/app/data/videos/{task_id}")
+    download_path = data.get("download_path", f"/app/data_storage/videos/{task_id}")
     
     try:
-        vercel_downloader = VercelVideoDownloader()
         downloaded_file_name = vercel_downloader.download(original_video_path, download_path)
         
         
@@ -60,6 +64,7 @@ def process_video_download_request(data: Dict[str, Any]):
         # 다운로드 완료되면 이벤트 발행
         publish_event(logger, EVENT_VIDEO_DOWNLOADED, {
             "task_id": task_id,
+            "user_id": user_id,
             "downloaded_video_path": downloaded_file_name,
             "original_video_path": original_video_path,
             "status": "completed"
@@ -77,11 +82,12 @@ def process_frames_extraction_request(data: Dict[str, Any]):
     
     task_id = data.get("task_id")
     downloaded_video_path = data.get("downloaded_video_path")
-    num_frames = data.get("num_frames", 30)
-    
+    num_frames = data.get("num_frames", int(os.getenv("NUM_FRAMES", 30)))
+    user_id = data.get("user_id")
+
     try:
         # frame 추출 경로도 actverse-api에서 지정한 값으로 설정
-        frames_path = f"/app/data/frames/{task_id}"
+        frames_path = f"{os.getenv('DATA_STORAGE_PATH')}/frames/{task_id}"
         video_frame_handler = VideoFrameHandler()
         frame_curator = NaiveVideoFrameCurator(num_frames)
 
@@ -100,6 +106,7 @@ def process_frames_extraction_request(data: Dict[str, Any]):
         # 프레임 추출 완료 이벤트 발행
         publish_event(logger, EVENT_FRAMES_EXTRACTED, {
             "task_id": task_id,
+            "user_id": user_id,
             "frames_path": frames_path,
             "num_frames": num_frames,
             "status": "completed"

@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+from dotenv import load_dotenv
 
 # 로깅 설정
 logging.basicConfig(
@@ -12,12 +13,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
+    # 환경 변수 로드
+    load_dotenv()
+    
     from app.worker import start_worker
     
-    try:
-        logger.info("모델 추론 워커 시작")
-        start_worker()
-    except Exception as e:
-        logger.error(f"모델 추론 워커 실행 중 오류 발생: {str(e)}")
-        # 오류 발생 시에도 docker-compose의 restart: always 설정으로 재시작됨
-        sys.exit(1)
+    logger.info("모델 추론 워커 시작")
+    start_worker()

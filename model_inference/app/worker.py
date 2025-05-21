@@ -27,6 +27,7 @@ SUBSCRIBE_EVENTS = [EVENT_MODEL_INFERENCE_REQUESTED]
 def process_inference_requested(data: Dict[str, Any]):
     """추론 요청 이벤트 처리"""
     task_id = data.get("task_id")
+    user_id = data.get("user_id")
     ## TODO: DB에서 추론 영상 경로 가져오기
     input_data = data.get("input_data")
     
@@ -37,6 +38,7 @@ def process_inference_requested(data: Dict[str, Any]):
         # 추론 완료 이벤트 발행
         publish_event(logger, EVENT_MODEL_INFERENCE_COMPLETED, {
             "task_id": task_id,
+            "user_id": user_id,
             "result_json_path": "result.json",
             "status": "completed"
         })

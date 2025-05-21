@@ -1,7 +1,12 @@
 import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from app.routers import tasks, status, video, labeling, training, deployments, models
 from app.services.task_tracker import TaskTracker
+
+# 환경 변수 로드
+load_dotenv()
+
 app = FastAPI(
     title="ActVerse API Gateway",
     description="ActVerse API 게이트웨이",

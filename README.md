@@ -6,6 +6,23 @@
 background tasks: [labeling monitoring] # 라벨링 완료 모니터링
 ```
 
+## 결과물
+```
+# /app/data_storage
+frames/{task_id}
+labels/{task_id}
+videos/{task_id}
+train_log/{task_id}
+ㄴdata
+    ㄴimages
+        ㄴtrain
+        ㄴval
+    ㄴlabels
+        ㄴtrain
+        ㄴval
+ㄴdata.yaml
+```
+
 ## TODO
 - [ ] 메세지 스텝 로그로 한 번에 알아볼 수 있도록 고치기
 - [ ] 세부사항 구현
@@ -13,9 +30,14 @@ background tasks: [labeling monitoring] # 라벨링 완료 모니터링
 - [x] 공통모듈로 컨테이너 간 중복코드 합치기(e.g: 메세지 발행/구독/소비, 로깅)
 - [ ] config로 고정값들(비디오, 프레임 다운로드 경로 등) 정리하기
 - [ ] 각 컨테이너별로 공유되는 데이터는 `data_storage` 볼륨에 저장. 더 나은 방법이 있는지 찾아봐야함. (S3와 같은. 더 큰 데이터에 대한 처리)
+- [ ] 라벨 업로드 형태
+    - [project name] - [task id]
+- [ ] 알림(slack, email) 기능
 - [ ] 에러 처리(데이터가 없는 경우, 프로세스 중간에 중단된 경우 등등)
 - [ ] DI 적용하기
 - [ ] 문서 만들기
+- [ ] python-sdk에서 YOLO(학습, 추론, 데이터 구성) 부분 추출하기 => python-sdk 리팩토링 
+    - [ ] YOLO 학습 데이터 구성 시에 직접 이미지 복사 후 처리
 
 
 ## actverse components

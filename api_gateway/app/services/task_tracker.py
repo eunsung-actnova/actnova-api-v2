@@ -4,7 +4,7 @@ import time
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.models.task import Task, Base
+from app.models.task import Task, TaskStep, Base
 from actverse_common.logging import setup_logger
 from actverse_common.events import (EVENT_VIDEO_DOWNLOAD_REQUESTED, EVENT_VIDEO_DOWNLOADED,
                                EVENT_FRAMES_EXTRACTION_REQUESTED, EVENT_FRAMES_EXTRACTED,
@@ -15,6 +15,7 @@ from actverse_common.events import (EVENT_VIDEO_DOWNLOAD_REQUESTED, EVENT_VIDEO_
 # 공유 메시징 라이브러리 대신 직접 pika 사용
 import pika
 import uuid
+import datetime
 
 # 단계별 예상 소요 시간(초)
 STEP_DURATIONS = {
@@ -160,7 +161,6 @@ class TaskTracker:
     
     def _listen_events(self):
         """이벤트 리스닝 전용 스레드 (소비자)"""
-        # 소비자 전용 연결 및 채널 변수
         consumer_connection = None
         consumer_channel = None
         
@@ -179,7 +179,7 @@ class TaskTracker:
                     except Exception:
                         pass
                 
-                # 새 소비자 전용 연결 생성 - 전용 함수 사용
+                # 새 소비자 전용 연결 생성
                 consumer_connection = create_task_tracker_connection(logger)
                 consumer_channel = consumer_connection.channel()
                 
@@ -190,20 +190,17 @@ class TaskTracker:
                     durable=True
                 )
                 
-                # 임시 큐 생성
-                result = consumer_channel.queue_declare(
-                    queue='task_tracker_queue', 
-                    exclusive=False,
-                    durable=True
-                )
-                queue_name = result.method.queue
+                # workflow_worker 큐 구독 (event_worker와 동일한 큐 사용)
+                queue_name = 'workflow_worker'
+                consumer_channel.queue_declare(queue=queue_name, durable=True)
                 
-                # 모든 이벤트 구독
-                consumer_channel.queue_bind(
-                    exchange='events',
-                    queue=queue_name,
-                    routing_key='#'  # 모든 이벤트 청취
-                )
+                # 워크플로우에 정의된 이벤트만 구독
+                for event_type in EVENT_TO_STEP.keys():
+                    consumer_channel.queue_bind(
+                        exchange='events',
+                        queue=queue_name,
+                        routing_key=event_type
+                    )
                 
                 def callback(ch, method, properties, body):
                     try:
@@ -298,8 +295,9 @@ class TaskTracker:
         event_type = message.get("event_type")
         data = message.get("data", {})
         task_id = data.get("task_id")
+        user_id = data.get("user_id")
         
-        if not task_id:
+        if not task_id or not user_id:
             return
             
         # 이벤트에 해당하는 단계 확인
@@ -309,40 +307,44 @@ class TaskTracker:
             
         with self.Session() as session:
             # 태스크 정보 조회
-            task = session.query(Task).filter(Task.task_id == task_id).first()
+            task = session.query(Task).filter(Task.id == task_id).first()
             
             # 신규 태스크면 생성
             if not task:
-                task = Task(task_id=task_id, status="created", current_step=step, step_history={})
+                task = Task(id=task_id, user_id=user_id, status="created")
                 session.add(task)
+                session.flush()  # ID 생성
             
-            # 단계 기록 업데이트
-            step_history = task.step_history or {}
+            # 현재 단계 조회 또는 생성
+            current_step = session.query(TaskStep).filter(
+                TaskStep.task_id == task_id,
+                TaskStep.step_name == step
+            ).first()
             
-            if step not in step_history:
-                step_history[step] = {"start_time": int(time.time())}
+            if not current_step:
+                current_step = TaskStep(
+                    task_id=task_id,
+                    step_name=step,
+                    status="processing",
+                    started_at=datetime.datetime.utcnow()
+                )
+                session.add(current_step)
             
-            # 완료 이벤트면 종료 시간 기록 및 다음 단계로 이동
+            # 완료 이벤트면 상태 업데이트
             if event_type in COMPLETION_EVENTS:
-                step_history[step]["end_time"] = int(time.time())
+                current_step.status = "completed"
+                current_step.finished_at = datetime.datetime.utcnow()
                 
                 # 다음 단계 계산
                 current_idx = WORKFLOW_STEPS.index(step)
                 if current_idx < len(WORKFLOW_STEPS) - 1:
-                    task.current_step = WORKFLOW_STEPS[current_idx + 1]
                     task.status = "processing"
                 else:
                     task.status = "completed"
-                    task.progress = 1.0
-                    task.estimated_time_remaining = 0
             else:
-                # 시작 이벤트면 현재 단계 설정
-                task.current_step = step
+                current_step.status = "processing"
                 task.status = "processing"
             
-            # 진행도 및 남은 시간 계산
-            self._update_progress_and_time(task)
-            task.step_history = step_history
             session.commit()
 
     def _update_progress_and_time(self, task):
@@ -378,17 +380,28 @@ class TaskTracker:
     def get_task_status(self, task_id):
         """태스크 상태 조회"""
         with self.Session() as session:
-            task = session.query(Task).filter(Task.task_id == task_id).first()
+            task = session.query(Task).filter(Task.id == task_id).first()
             
             if not task:
                 return None
                 
+            # 단계별 상태 정보 조회
+            steps = session.query(TaskStep).filter(
+                TaskStep.task_id == task_id
+            ).order_by(TaskStep.step_name).all()
+            
+            step_status = {}
+            for step in steps:
+                step_status[step.step_name] = {
+                    "status": step.status,
+                    "started_at": step.started_at.isoformat() if step.started_at else None,
+                    "finished_at": step.finished_at.isoformat() if step.finished_at else None
+                }
+            
             return {
-                "task_id": task.task_id,
+                "task_id": task.id,
+                "user_id": task.user_id,
                 "status": task.status,
-                "current_step": task.current_step,
-                "progress": task.progress,
-                "estimated_time_remaining": task.estimated_time_remaining,
-                "created_at": task.created_at.isoformat() if task.created_at else None,
-                "updated_at": task.updated_at.isoformat() if task.updated_at else None
+                "created_at": task.created_at.isoformat(),
+                "steps": step_status
             }
