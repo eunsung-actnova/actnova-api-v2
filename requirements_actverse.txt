@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+redis
+celery[redis]
+slack-sdk
+scikit-image
+pynvml
+ultralytics
+git+https://${GITHUB_TOKEN}@github.com/actnova-inc/actnova-python-sdk.git@main#egg=actnova
+pandas
+ffmpeg-python
+dropbox
+google-api-python-client
+vercel_blob@git+https://github.com/SuryaSekhar14/vercel_blob.git

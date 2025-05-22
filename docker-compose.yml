@@ -159,7 +159,22 @@ services:
     restart: unless-stopped
 
   # TODO: nvidia triton inference server
-  
+  triton-server:
+    image: nvcr.io/nvidia/tritonserver:24.03-py3
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - data_storage:/data_storage/models
+    command:
+      - tritonserver
+      - "--model-repository=/data_storage/models"
+      - "--log-verbose=1"
+      - "--load-model=*"
+      - "--model-control-mode=explicit"
+    networks:
+      - actverse_network
+    restart: always
 
 networks:
   actverse_network:
@@ -174,5 +189,5 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: C:/Users/willo/Desktop/code/actverse-api-refactoring/data_storage
+      device: C:/Users/user/Desktop/code/actnova-api-v2/data_storage
 

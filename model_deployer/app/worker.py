@@ -4,6 +4,9 @@ import os
 import time
 from typing import Dict, Any
 
+from app.model_packaging import ONNXModelPackaging
+from app.deployer import TritonModelDeployer
+
 from actverse_common.logging import (
     setup_logger, 
     log_event_received, 
@@ -14,7 +17,6 @@ from actverse_common.logging import (
 from actverse_common.events import (
     EVENT_MODEL_DEPLOYMENT_REQUESTED,
     EVENT_MODEL_DEPLOYMENT_COMPLETED,
-    EVENT_MODEL_INFERENCE_REQUESTED
 )
 from actverse_common.messaging import publish_event, get_rabbitmq_connection
 
@@ -24,6 +26,10 @@ logger = setup_logger(service_name="model_deployer")
 # 구독할 이벤트
 SUBSCRIBE_EVENTS = [EVENT_MODEL_DEPLOYMENT_REQUESTED]
 
+model_packaging = ONNXModelPackaging()
+triton_model_deployer = TritonModelDeployer()
+
+triton_url = os.getenv("TRITON_SERVER_URL")
 
 def process_model_deployment_requested(data: Dict[str, Any]):
     """모델 배포 요청 이벤트 처리"""
@@ -35,6 +41,14 @@ def process_model_deployment_requested(data: Dict[str, Any]):
         # 모델 배포 로직
         logger.info(f"모델 배포 중: {model_path}")
         
+
+        # 모델 패키징
+        model_packaging(task_id)
+        # triton server에 모델 교체
+        triton_model_deployer.request_model_update(triton_url=triton_url, 
+                                                   task_id=task_id, 
+                                                   action="load")
+
         # 모델 배포 완료 이벤트 발행
         publish_event(logger, EVENT_MODEL_DEPLOYMENT_COMPLETED, {
             "task_id": task_id,

@@ -1,4 +1,5 @@
 import json
+import traceback
 import pika
 import os
 import time
@@ -63,7 +64,7 @@ def process_model_training_requested(data: Dict[str, Any]):
                   epochs=1, # TODO: 학습 config 지정 위치 선정 필요
                   batch_size=1,
                   lr=0.001,
-                  model_save_path=os.getenv("MODEL_SAVE_PATH"))
+                  model_save_path=f'{data_storage_path}/train_log/{task_id}')
 
     try:
         # 모델 학습 로직
@@ -116,6 +117,8 @@ def callback(ch, method, properties, body):
             task_id = data.get("task_id", "unknown")
         log_event_failed(logger, event_type if 'event_type' in locals() else "unknown", 
                         task_id, str(e))
+        
+        traceback.print_exc()
         logger.error(f"이벤트 처리 중 오류 발생: {str(e)}")
         ch.basic_ack(delivery_tag=method.delivery_tag)
 

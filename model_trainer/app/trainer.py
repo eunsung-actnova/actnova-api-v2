@@ -4,6 +4,7 @@ from actnova.model import Yolov8KeypointEstimator
 from actnova.model.utils import select_device
 
 from actverse_common.logging import setup_logger
+import traceback
 
 logger = setup_logger(service_name="model_trainer")
 MIN_MEMORY_MB = 2_000  # test
@@ -63,7 +64,7 @@ class YoloTrainer(Trainer):
         try:
             model = Yolov8KeypointEstimator(**config)   
         except Exception as e:
-            logger.error(f"Failed to create model: {e}")
+            logger.error(f"Failed to create model: {e}\n{traceback.format_exc()}")
             raise e
 
         logger.info(f"model: {model}")

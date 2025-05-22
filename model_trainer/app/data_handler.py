@@ -69,8 +69,8 @@ class YamlDataHandler(DataHandler):
 
         data_yaml = {
             "path": data_path,
-            "train": "images/train/",
-            "val": "images/val/",
+            "train": "data/images/train/",
+            "val": "data/images/valid/",
             "kpt_shape": [len(flip_idx), 3],
             "flip_idx": flip_idx,
             "names": {0: "mouse"},

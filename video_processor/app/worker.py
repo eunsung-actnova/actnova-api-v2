@@ -43,6 +43,7 @@ SUBSCRIBE_EVENTS = [
 def process_video_download_request(data: Dict[str, Any]):
     """비디오 다운로드 요청 이벤트 처리"""
     task_id = data.get("task_id")
+
     user_id = data.get("user_id")
     original_video_path = data.get("video_path")
     download_path = data.get("download_path", f"/app/data_storage/videos/{task_id}")

@@ -32,6 +32,8 @@ async def create_task(data: TaskCreate):
     try:
         # 고유 태스크 ID 생성
         task_id = str(uuid.uuid4())
+        # TODO: 테스트 설정. task_id 고정에서 변환 필요
+        # task_id = "f564be73-d028-431f-b433-c62dd8a5f18b"
         # 태스크 생성 이벤트 발행
         logger.info(f"Task created: {task_id}")
         

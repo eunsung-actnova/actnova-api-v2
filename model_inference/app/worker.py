@@ -3,7 +3,9 @@ import pika
 import os
 import time
 from typing import Dict, Any
-
+from glob import glob
+from app.inference import YOLOv8KeypointInference
+from app.analysis_notebook import generate_analysis_script
 from actverse_common.logging import (
     setup_logger, 
     log_event_received, 
@@ -29,17 +31,23 @@ def process_inference_requested(data: Dict[str, Any]):
     task_id = data.get("task_id")
     user_id = data.get("user_id")
     ## TODO: DB에서 추론 영상 경로 가져오기
-    input_data = data.get("input_data")
     
     try:
         # 모델 추론 로직
+        download_path = f'inference_results/{task_id}'
+        # TODO: 비디오 이름 식별 필요
+        video_file = glob(f'{os.getenv("DATA_STORAGE_PATH")}/videos/{task_id}/*.mp4')[0]
+
+        inference = YOLOv8KeypointInference(download_path)
+
+        inference(video_file, task_id)
+        
         logger.info(f"모델 추론 중: {task_id}")
         
         # 추론 완료 이벤트 발행
         publish_event(logger, EVENT_MODEL_INFERENCE_COMPLETED, {
             "task_id": task_id,
             "user_id": user_id,
-            "result_json_path": "result.json",
             "status": "completed"
         })
         
@@ -47,6 +55,19 @@ def process_inference_requested(data: Dict[str, Any]):
     except Exception as e:
         logger.error(f"모델 추론 중 오류: {str(e)}")
         return False
+    
+def process_inference_result(data: Dict[str, Any]):
+    task_id = data.get("task_id")
+    user_id = data.get("user_id")
+
+
+    # generate notebook
+    # user_url은  dropbox 업로드 후 받아오는 url?
+    user_url = ''
+    generate_analysis_script(task_id, user_url) 
+    # generate overlaid video
+
+
 
 
 def callback(ch, method, properties, body):

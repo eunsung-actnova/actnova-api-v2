@@ -34,6 +34,6 @@ if __name__ == "__main__":
     try:
         while True:
             monitor_labeling_tasks(postgres_label_task_repository, superb_labelling_manager)
-            time.sleep(60)  # 60초마다 모니터링
+            time.sleep(30)  # 60초마다 모니터링
     except KeyboardInterrupt:
         logger.info("라벨링 모니터 종료")

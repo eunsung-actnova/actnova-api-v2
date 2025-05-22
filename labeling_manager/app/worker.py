@@ -48,6 +48,7 @@ def process_frames_extracted(data: Dict[str, Any]):
     logger.info(f'superbai token: {os.getenv("SUPERBAI_TOKEN")}')
     
 
+    # TODO: 테스트 설정
     superb_labelling_manager.upload_images(frames_path, task_id)
     # DB에 라벨 태스크 저장
     # TODO: 리포지토리 초기화 위치 지정.

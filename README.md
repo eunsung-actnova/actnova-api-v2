@@ -8,11 +8,11 @@ background tasks: [labeling monitoring] # 라벨링 완료 모니터링
 
 ## 결과물
 ```
-# /app/data_storage
-frames/{task_id}
-labels/{task_id}
-videos/{task_id}
-train_log/{task_id}
+# /app/data_storage/
+frames/{task_id}/
+labels/{task_id}/
+videos/{task_id}/
+train_log/{task_id}/
 ㄴdata
     ㄴimages
         ㄴtrain
@@ -20,7 +20,10 @@ train_log/{task_id}
     ㄴlabels
         ㄴtrain
         ㄴval
+model.pt
 ㄴdata.yaml
+inference_results/
+models/
 ```
 
 ## TODO
@@ -38,6 +41,13 @@ train_log/{task_id}
 - [ ] 문서 만들기
 - [ ] python-sdk에서 YOLO(학습, 추론, 데이터 구성) 부분 추출하기 => python-sdk 리팩토링 
     - [ ] YOLO 학습 데이터 구성 시에 직접 이미지 복사 후 처리
+
+
+- [ ] vercel blob에 결과 업로드
+- [ ] slack에 알림
+- [ ] 라벨링 완료 태스크 알림 조건은 리뷰 APPROVE 상태여야함
+- [ ] vercel api에 결과 보내줘야함
+- [ ] 결과 동영상, 노트북 스크립트
 
 
 ## actverse components
