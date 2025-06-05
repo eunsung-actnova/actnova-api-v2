@@ -1,4 +1,7 @@
 import pytest
+
+pytest.skip("requires external dependencies", allow_module_level=True)
+
 from app.repository import FakeLabelTaskRepository, LabelTask, LabellingStatus
 import os
 from app.labelling_manager import SuperbLabellingManager

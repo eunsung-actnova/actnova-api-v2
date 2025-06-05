@@ -1,6 +1,6 @@
 docker run \
     -d \
-    --name triton-server \
+    --name triton_server \
     --gpus all \
     -v ./models:/models \
     -p 8000:8000 nvcr.io/nvidia/tritonserver:24.03-py3 tritonserver \
