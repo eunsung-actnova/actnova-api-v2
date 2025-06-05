@@ -55,6 +55,21 @@ services:
       - actverse_network
     restart: always
 
+  api_worker:
+    build:
+      dockerfile: ./api_gateway/Dockerfile
+    command: celery -A app.celery.app worker --loglevel=info
+    depends_on:
+      - rabbitmq
+      - postgres
+    env_file:
+      - .env
+    volumes:
+      - ./common:/app/common
+    networks:
+      - actverse_network
+    restart: always
+
 
   # 라벨링 모니터링 워커
   labeling_monitor:
@@ -71,20 +86,6 @@ services:
       - actverse_network
     restart: always
 
-  # 모델 트레이너 워커
-  model_trainer:
-    build:
-      dockerfile: ./model_trainer/Dockerfile
-    depends_on:
-      - rabbitmq
-    env_file:
-      - .env
-    volumes:
-      - data_storage:${DATA_STORAGE_PATH}
-      - ./common:/app/common
-    networks:
-      - actverse_network
-    restart: always
 
   # 모델 결과 변환 및 내보내기 워커
   model_exporter:
