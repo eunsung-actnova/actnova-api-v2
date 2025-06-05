@@ -1,10 +1,16 @@
 
+
+## Developer
+[contributing](README_CONTRIBUTING.md)
+
+
 ## TODO
 - [ ] CI-CD 구성 
     - [ ] dev, prod 분리
+    - [ ] Makefile 작성
     - [ ] 테스트 케이스 작성
     - [ ] 무중단 배포
-- 
+- [ ] 테스트 작성.
 - [ ] 알림 기능. 스텝별 적용하기
 - [ ] 상태 호출 API - redis에 적재한 후, 주기적으로 front에 전송
 - [ ] 에러 처리(데이터가 없는 경우, 프로세스 중간에 중단된 경우 등등)
@@ -53,6 +59,7 @@
 - model-deployer: onnx 변환
 - triton-server: 모델 호스팅
 
+<br></br>
 
 - celery worker
     - video-processor: 인풋 비디오에 대한 다운로드, 프레임 추출, 업로드 처리
