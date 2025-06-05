@@ -5,12 +5,9 @@ import time
 
 from actverse_common.logging import setup_logger
 
+from app.celery.tasks import start_pipeline
 from actverse_common.messaging import publish_event
-from actverse_common.events import (
-    EVENT_TASK_CREATED,
-    EVENT_VIDEO_DOWNLOAD_REQUESTED,
-    EVENT_FRAMES_EXTRACTION_REQUESTED
-)
+from actverse_common.events import EVENT_TASK_CREATED
 
 logger = setup_logger(service_name="api_gateway-tasks")
 
@@ -45,14 +42,8 @@ async def create_task(data: TaskCreate):
             "timestamp": int(time.time())
         }
         publish_event(logger, EVENT_TASK_CREATED, task_data)
-        
-        # 비디오 다운로드 요청 이벤트 발행
-        download_data = {
-            "task_id": task_id,
-            "video_path": data.file_path,
-            "user_id": data.user_id
-        }
-        publish_event(logger, EVENT_VIDEO_DOWNLOAD_REQUESTED, download_data)
+
+        start_pipeline(task_data)
 
         return {"task_id": task_id}
     except Exception as e:
