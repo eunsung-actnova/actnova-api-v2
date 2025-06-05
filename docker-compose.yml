@@ -87,10 +87,10 @@ services:
     restart: always
 
 
-  # 모델 결과 변환 및 내보내기 워커
-  model_exporter:
+  # 모델 배포 워커
+  model_deployer:
     build:
-      dockerfile: ./model_exporter/Dockerfile
+      dockerfile: ./model_deployer/Dockerfile
     depends_on:
       - rabbitmq
     env_file:

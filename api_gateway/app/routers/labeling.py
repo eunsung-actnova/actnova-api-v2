@@ -1,3 +1,4 @@
+from typing_extensions import deprecated
 from fastapi import APIRouter, HTTPException, Path
 from app.models.schemas import LabelingCreate, TaskResponse
 from actverse_common.events import EVENT_LABELING_REQUESTED
@@ -17,7 +18,7 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=TaskResponse)
+@router.post("/", response_model=TaskResponse, deprecated=True)
 async def create_labeling_task(data: LabelingCreate):
     """라벨링 요청"""
     try:
