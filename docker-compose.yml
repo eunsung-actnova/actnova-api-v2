@@ -55,35 +55,6 @@ services:
       - actverse_network
     restart: always
 
-  # 비디오 프로세서 워커
-  video_processor:
-    build:
-      dockerfile: ./video_processor/Dockerfile
-    depends_on:
-      - rabbitmq
-    env_file:
-      - .env
-    volumes:
-      - data_storage:${DATA_STORAGE_PATH}
-      - ./common:/app/common
-    networks:
-      - actverse_network
-    restart: always
-
-  # 라벨링 매니저 워커
-  labeling_manager:
-    build:
-      dockerfile: ./labeling_manager/Dockerfile
-    depends_on:
-      - rabbitmq          
-    env_file:
-      - .env
-    volumes:
-      - data_storage:${DATA_STORAGE_PATH}
-      - ./common:/app/common
-    networks:
-      - actverse_network
-    restart: always
 
   # 라벨링 모니터링 워커
   labeling_monitor:
@@ -115,51 +86,24 @@ services:
       - actverse_network
     restart: always
 
-  # 모델 배포 워커
-  model_deployer:
+  # 모델 결과 변환 및 내보내기 워커
+  model_exporter:
     build:
-      dockerfile: ./model_deployer/Dockerfile
+      dockerfile: ./model_exporter/Dockerfile
     depends_on:
       - rabbitmq
     env_file:
       - .env
     volumes:
-      - model_data:/app/models
+      - data_storage:${DATA_STORAGE_PATH}
       - ./common:/app/common
     networks:
       - actverse_network
     restart: always
 
-  # 모델 추론 워커
-  model_inference:
-    build:
-      dockerfile: ./model_inference/Dockerfile
-    depends_on:
-      - rabbitmq
-    env_file:
-      - .env
-    volumes:
-      - model_data:/app/models
-      - ./common:/app/common
-    networks:
-      - actverse_network
-    restart: always
-
-  event_worker:
-    build:
-      dockerfile: ./event_worker/Dockerfile
-    env_file:
-      - .env
-    depends_on:
-      - rabbitmq
-    volumes:
-      - ./common:/app/common
-    networks:
-      - actverse_network
-    restart: unless-stopped
 
   # TODO: nvidia triton inference server
-  triton-server:
+  triton_server:
     image: nvcr.io/nvidia/tritonserver:24.03-py3
     runtime: nvidia
     environment:
@@ -183,7 +127,6 @@ networks:
 volumes:
   rabbitmq_data:
   postgres_data:
-  model_data:
   data_storage:
     driver: local
     driver_opts:
