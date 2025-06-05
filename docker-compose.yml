@@ -55,7 +55,7 @@ services:
       - actverse_network
     restart: always
 
-  api_worker:
+  celery_worker:
     build:
       dockerfile: ./api_gateway/Dockerfile
     command: celery -A app.celery.app worker --loglevel=info
@@ -70,21 +70,21 @@ services:
       - actverse_network
     restart: always
 
-
-  # 라벨링 모니터링 워커
-  labeling_monitor:
+  celery_beat:
     build:
-      dockerfile: ./labeling_monitor/Dockerfile
+      dockerfile: ./api_gateway/Dockerfile
+    command: celery -A app.celery.app beat --loglevel=info
     depends_on:
       - rabbitmq
+      - postgres
     env_file:
       - .env
     volumes:
-      - data_storage:${DATA_STORAGE_PATH}
       - ./common:/app/common
     networks:
       - actverse_network
     restart: always
+
 
 
   # 모델 배포 워커
@@ -133,5 +133,5 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: C:/Users/user/Desktop/code/actnova-api-v2/data_storage
+      device: labeling_monitor/tests
 

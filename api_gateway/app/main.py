@@ -30,7 +30,7 @@ async def startup_event():
 
 @app.get("/")
 async def root():
-    return {"message": "ActVerse API Gateway"}
+    return {"message": "Actverse API Gateway"}
 
 
 if __name__ == "__main__":

@@ -1,7 +1,0 @@
-pika==1.2.0
-psycopg2-binary==2.9.1
-sqlalchemy
-superb-ai-label
-numpy==1.23.5
-opencv-python==4.7.0.72
-python-dotenv==1.0.0
