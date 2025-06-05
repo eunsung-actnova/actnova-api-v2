@@ -1,5 +1,5 @@
-from app.video_processor.video_downloader import VercelVideoDownloader
-from app.video_processor.videoframe_handler import VideoFrameHandler, NaiveVideoFrameCurator
+from app.features.video_processor.video_downloader import VercelVideoDownloader
+from app.features.video_processor.videoframe_handler import VideoFrameHandler, NaiveVideoFrameCurator
 
 def download_video(url: str, download_path: str):
     downloader = VercelVideoDownloader()

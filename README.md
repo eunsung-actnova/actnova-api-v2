@@ -1,5 +1,10 @@
 
 ## TODO
+- [ ] CI-CD 구성 
+    - [ ] dev, prod 분리
+    - [ ] 테스트 케이스 작성
+    - [ ] 무중단 배포
+- 
 - [ ] 알림 기능. 스텝별 적용하기
 - [ ] 상태 호출 API - redis에 적재한 후, 주기적으로 front에 전송
 - [ ] 에러 처리(데이터가 없는 경우, 프로세스 중간에 중단된 경우 등등)
@@ -7,10 +12,6 @@
 - [ ] 문서 만들기
 - [ ] python-sdk에서 YOLO(학습, 추론, 데이터 구성) 부분 추출하기 => python-sdk 리팩토링 
     - [ ] YOLO 학습 데이터 구성 시에 직접 이미지 복사 후 처리
-- [ ] CI-CD 구성 
-    - [ ] dev, prod 분리
-    - [ ] 테스트 케이스 작성
-    - [ ] 무중단 배포
 
 
 
@@ -18,12 +19,61 @@
 
 ```
 📦 docker-compose.yml
-├── 🧩 api_gateway          # REST API + 동영상 처리, 요청 수신, 알림 포함 (서비스가 커질 경우 분리)
-├── 🧠 model_trainer        # 모델 학습 + epoch별 콜백
-├── 📤 model_exporter       # 모델 결과(csv/json/video) 생성 및 notebook/onnx 변환
-├── 🚀 triton_server        # ONNX 모델 호스팅
-├── 📨 rabbitmq             # 메시지 브로커
+├── 🧩 api_gateway                # REST API, 동영상 처리, 요청 수신, 알림 등
+│   ├── celery                   # 비동기 태스크 처리
+│   ├── features                 # 주요 기능별 도메인 코드
+│   │   ├── labeling_manager     # 라벨링 요청, 완료율 모니터링
+│   │   ├── video_processor      # 동영상 다운로드, 프레임 추출, 업로드
+│   │   ├── model_inference      # 모델 추론, 결과 처리/업로드
+│   │   └── notification         # 알림
+│   ├── routers                  # API 라우팅
+│   ├── services                 # 서비스 로직(features에서 함수 사용)
+│   ├── entities                 # DB ORM 엔티티(Task 등, RDB 테이블 매핑)
+│   ├── schemas                  # API 입출력(Pydantic)
+│   │   ├── task.py
+│   │   ├── video.py
+│   │   └── label.py
+│   ├── main.py
+├── 🧠 model_trainer              # 모델 학습 + epoch별 콜백
+├── 📤 model_exporter             # 모델 결과(csv/json/video) 생성 및 notebook/onnx 변환
+├── 🚀 triton_server              # ONNX 모델 호스팅
+├── 📨 rabbitmq                   # 메시지 브로커
 ```
+
+
+
+## actverse components
+
+물리적(도커 컨테이너) 구분
+- api-gateway
+- celery worker
+- celery beat: 태스크의 라벨링 완료율 모니터링 후, 완료 시 재학습 트리거링
+- rabbitmq: actverse steps를 메세지로 관리함. 실패 시 재시도 로직과 각 단계별 로깅 적용
+- model-trainer: 모델 학습
+- model-deployer: onnx 변환
+- triton-server: 모델 호스팅
+
+
+- celery worker
+    - video-processor: 인풋 비디오에 대한 다운로드, 프레임 추출, 업로드 처리
+    - labeling-manager: 라벨링 툴에 라벨링할 이미지 전송, 태스크 완료율 조회
+    - model-inference: 모델 추론
+    - notification: 슬랙, 이메일 알림
+
+
+
+
+#### Celery로 chain할 부분
+- 동영상 다운로드 -> 동영상 검증 -> 동영상 변환 -> 프레임 추출 -> 라벨링 요청
+- 분석 결과 csv, json, overlaid video, json chunks chord로 병렬 업로드
+
+#### RabbitMQ로 처리해야할 부분(컨테이너 분리로 인한)
+- 동영상 처리 -> 모델 학습 EVENT_VIDEO_DOWNLOADED -> EVENT_MODEL_TRAINING_REQUESTED
+- 모델 학습 완료 -> 모델 저장(변환) EVENT_MODEL_TRAINING_COMPLETED -> EVENT_MODEL_CONVERSION_REQUESTED
+- 모델 저장(변환) -> 모델 로드(서빙) EVENT_MODEL_CONVERSION_COMPLETED -> EVENT_MODEL_DEPLOYMENT_REQUESTED
+- 모델 로드(서빙) -> 분석 EVENT_MODEL_DEPLOYED -> EVENT_INFERENCE_REQUESTED
+
+
 
 
 ## 📌 `api_gateway` 역할 상세
@@ -49,6 +99,22 @@
 
 background tasks: [labeling monitoring] # 라벨링 완료 모니터링
 ```
+
+## 단계별 input/output
+
+| 단계                | Input                                                      | Output                                   |
+|---------------------|-----------------------------------------------------------|------------------------------------------|
+| 모델 초기 요청      | -                                                          | -                                        |
+| 동영상 처리         | task_id, user_id, download_path, frame_path                | mb, frames, video_type, frame_path       |
+| 글로벌 모델로 분석  | task_id, user_id, download_path                            | task_id, user_id, inference_result_path  |
+| 라벨링 요청         | task_id, user_id, frame_path                               | -                                        |
+| 라벨링 완료         | task_id, user_id                                           | task_id, user_id, labeling_path          |
+| 사용자 모델 학습    | task_id, user_id, labeling_path                            | task_id, user_id, model_path             |
+| 사용자 모델 저장    | task_id, user_id, model_path                               | task_id, user_id, deployment_id          |
+| 사용자 모델 로드    | task_id, user_id, deployment_id                            | -                                        |
+| 사용자 모델로 분석  | task_id, user_id, deployment_id, inference_data_path       | task_id, user_id, inference_result_path  |
+| 분석 파일 업로드    | task_id, user_id, inference_result_path                    | task_id, user_id                         |
+
 
 ## 결과물
 ```
@@ -77,52 +143,10 @@ inference_results/
 models/
 ```
 
-## actverse components
 
-물리적(도커 컨테이너) 구분
-- api-gateway
-- celery worker
-- celery beat: 태스크의 라벨링 완료율 모니터링 후, 완료 시 재학습 트리거링
-- rabbitmq: actverse steps를 메세지로 관리함. 실패 시 재시도 로직과 각 단계별 로깅 적용
-- model-trainer: 모델 학습
-- model-deployer: onnx 변환
-- triton-server: 모델 호스팅
-
-
-- celery worker
-    - video-processor: 인풋 비디오에 대한 다운로드, 프레임 추출, 업로드 처리
-    - labeling-manager: 라벨링 툴에 라벨링할 이미지 전송, 태스크 완료율 조회
-    - model-inference: 모델 추론
-    - notification: 슬랙, 이메일 알림
-
-
-## 단계별 input/output
-
-| 단계                | Input                                                      | Output                                   |
-|---------------------|-----------------------------------------------------------|------------------------------------------|
-| 모델 초기 요청      | -                                                          | -                                        |
-| 동영상 처리         | task_id, user_id, download_path, frame_path                | mb, frames, video_type, frame_path       |
-| 글로벌 모델로 분석  | task_id, user_id, download_path                            | task_id, user_id, inference_result_path  |
-| 라벨링 요청         | task_id, user_id, frame_path                               | -                                        |
-| 라벨링 완료         | task_id, user_id                                           | task_id, user_id, labeling_path          |
-| 사용자 모델 학습    | task_id, user_id, labeling_path                            | task_id, user_id, model_path             |
-| 사용자 모델 저장    | task_id, user_id, model_path                               | task_id, user_id, deployment_id          |
-| 사용자 모델 로드    | task_id, user_id, deployment_id                            | -                                        |
-| 사용자 모델로 분석  | task_id, user_id, deployment_id, inference_data_path       | task_id, user_id, inference_result_path  |
-| 분석 파일 업로드    | task_id, user_id, inference_result_path                    | task_id, user_id                         |
-
-
-
-
-#### Celery로 chain할 부분
-- 동영상 다운로드 -> 동영상 검증 -> 동영상 변환 -> 프레임 추출 -> 라벨링 요청
-- 분석 결과 csv, json, overlaid video, json chunks chord로 병렬 업로드
-
-#### RabbitMQ로 처리해야할 부분(컨테이너 분리로 인한)
-- 동영상 처리 -> 모델 학습 EVENT_VIDEO_DOWNLOADED -> EVENT_MODEL_TRAINING_REQUESTED
-- 모델 학습 완료 -> 모델 저장(변환) EVENT_MODEL_TRAINING_COMPLETED -> EVENT_MODEL_CONVERSION_REQUESTED
-- 모델 저장(변환) -> 모델 로드(서빙) EVENT_MODEL_CONVERSION_COMPLETED -> EVENT_MODEL_DEPLOYMENT_REQUESTED
-- 모델 로드(서빙) -> 분석 EVENT_MODEL_DEPLOYED -> EVENT_INFERENCE_REQUESTED
+## Storage
+- Redis: 태스크 status 저장(상태 덮어쓰기), 태스크 진행률 저장
+- RDB(PostgresSQL): label task 저장, 전체 태스크 진행 기록 저장(시작 시간, 걸린 시간 등등)
 
 
 
