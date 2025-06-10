@@ -1,12 +1,9 @@
 import os
-import sys
 import json
 import csv
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-from ..video_downloader import VercelVideoDownloader
-from app.features.video_uploader import LocalUploader
+from app.features.video_processor.video_downloader import VercelVideoDownloader
+from app.features.video_processor.video_uploader import LocalUploader
 
 
     
@@ -49,3 +46,4 @@ from app.features.video_uploader import LocalUploader
 
 #     assert os.path.exists(csv_uploaded)
 #     assert os.path.exists(json_uploaded)
+

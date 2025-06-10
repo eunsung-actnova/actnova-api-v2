@@ -1,11 +1,18 @@
 import os
-import sys
 
 import cv2
 import numpy as np
 import pytest
 
-from api_gateway.app.videoframe_handler import NaiveVideoFrameCurator, VideoFrameHandler
+from app.features.video_processor.videoframe_handler import (
+    NaiveVideoFrameCurator,
+    VideoFrameHandler,
+)
+
+# videoframe_handler module does not import cv2 by default.
+# Ensure it has the cv2 module available during tests.
+import app.features.video_processor.videoframe_handler as vfh
+vfh.cv2 = cv2
 
 
 class TestVideoFrameHandler:
@@ -120,3 +127,4 @@ class TestVideoFrameHandler:
         assert len(curated_frames) <= len(short_frames)
         # Should get as many frames as possible with even spacing
         assert len(curated_frames) == len(short_frames)
+
