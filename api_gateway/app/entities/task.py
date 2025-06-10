@@ -1,10 +1,9 @@
 from sqlalchemy import Column, String, Float, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 from datetime import timezone
 
-Base = declarative_base()
+from app.entities.base import Base
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -17,6 +16,7 @@ class Task(Base):
     
     # relationship 설정
     steps = relationship("TaskStep", back_populates="task")
+    video = relationship("Video", back_populates="task")
 
 class TaskStep(Base):
     __tablename__ = "task_steps"

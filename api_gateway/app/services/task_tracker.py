@@ -4,7 +4,7 @@ import time
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.entities.task import Task, TaskStep, Base
+from app.entities import Task, TaskStep, Base
 from actverse_common.logging import setup_logger
 from actverse_common.events import (EVENT_VIDEO_DOWNLOAD_REQUESTED, EVENT_VIDEO_DOWNLOADED,
                                EVENT_FRAMES_EXTRACTION_REQUESTED, EVENT_FRAMES_EXTRACTED,
