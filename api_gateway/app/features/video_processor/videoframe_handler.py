@@ -2,7 +2,7 @@ import abc
 from typing import List
 from pathlib import Path
 
-import cv2
+# import cv2
 import numpy as np
 
 

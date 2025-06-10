@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Path
-from app.models.schemas import TrainingCreate, TaskResponse
+from app.schemas.task import TrainingCreate, TaskResponse
 import uuid
 
 from actverse_common.events import EVENT_TRAINING_REQUESTED
@@ -32,7 +32,7 @@ async def train_model(data: TrainingCreate):
             "data_path": data.data_path,
             "mode_train_info": data.mode_train_info
         }
-        publish_event(logger, EVENT_TRAINING_REQUESTED, event_data)
+        # publish_event(logger, EVENT_TRAINING_REQUESTED, event_data)
         
         return {"task_id": task_id}
     except Exception as e:

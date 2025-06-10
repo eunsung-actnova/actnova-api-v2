@@ -1,5 +1,11 @@
 data_storage/
 **/*/test_data/
-**/*/__pycache__/
 .pytest_cache/
 .env
+
+# Python cache and compiled files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*/*.py[cod]
+**/*.py[cod]

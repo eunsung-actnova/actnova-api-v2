@@ -4,14 +4,13 @@ import os
 import time
 from typing import Dict, Any
 from glob import glob
-from app.inference import YOLOv8KeypointInference
-from app.analysis_notebook import generate_analysis_script
+from app.features.model_inference.inference import YOLOv8KeypointInference
+from app.features.model_inference.analysis_notebook import generate_analysis_script
 from actverse_common.logging import (
     setup_logger, 
     log_event_received, 
     log_event_processed, 
     log_event_failed, 
-    log_event_published
 )
 from actverse_common.events import (
     EVENT_MODEL_INFERENCE_REQUESTED, 

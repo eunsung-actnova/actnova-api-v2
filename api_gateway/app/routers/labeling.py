@@ -1,6 +1,6 @@
-from typing_extensions import deprecated
 from fastapi import APIRouter, HTTPException, Path
-from app.models.schemas import LabelingCreate, TaskResponse
+from app.schemas.label import LabelingCreate
+from app.schemas.task import TaskResponse
 from actverse_common.events import EVENT_LABELING_REQUESTED
 from actverse_common.messaging import publish_event
 from actverse_common.logging import setup_logger
@@ -28,7 +28,7 @@ async def create_labeling_task(data: LabelingCreate):
             "task_id": data.task_id,
             "user_id": data.user_id
         }
-        publish_event(logger, EVENT_LABELING_REQUESTED, event_data)
+        # publish_event(logger, EVENT_LABELING_REQUESTED, event_data)
         
         return {"task_id": data.task_id}
     except Exception as e:

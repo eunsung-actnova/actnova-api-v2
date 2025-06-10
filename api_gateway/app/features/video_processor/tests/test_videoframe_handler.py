@@ -5,8 +5,7 @@ import cv2
 import numpy as np
 import pytest
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from app.videoframe_handler import NaiveVideoFrameCurator, VideoFrameHandler
+from api_gateway.app.videoframe_handler import NaiveVideoFrameCurator, VideoFrameHandler
 
 
 class TestVideoFrameHandler:

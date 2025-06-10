@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.models.schemas import DeploymentCreate, TaskResponse
+from app.schemas.task import DeploymentCreate, TaskResponse
 
 from actverse_common.logging import setup_logger
 from actverse_common.events import EVENT_DEPLOYMENT_REQUESTED
@@ -27,7 +27,7 @@ async def deploy_model(data: DeploymentCreate):
             "task_id": data.task_id,
             "model_path": data.model_path
         }
-        publish_event(logger, EVENT_DEPLOYMENT_REQUESTED, event_data)
+        # publish_event(logger, EVENT_DEPLOYMENT_REQUESTED, event_data)
         
         return {"task_id": data.task_id}
     except Exception as e:

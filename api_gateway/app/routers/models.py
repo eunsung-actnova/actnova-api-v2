@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Path
-from app.models.schemas import InferenceCreate
+from app.schemas.task import InferenceCreate
 from actverse_common.events import EVENT_INFERENCE_REQUESTED
 from actverse_common.messaging import publish_event
 from actverse_common.logging import setup_logger
@@ -52,7 +52,7 @@ async def run_inference(
             "frame_skip": data.frame_skip,
             "max_frames": data.max_frames
         }
-        publish_event(logger, EVENT_INFERENCE_REQUESTED, event_data)
+        # publish_event(logger, EVENT_INFERENCE_REQUESTED, event_data)
         
         # 임시 결과 반환
         return {"results": [], "task_id": task_id}

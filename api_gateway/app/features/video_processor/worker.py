@@ -6,8 +6,8 @@ import pika
 from typing import Dict, Any
 from datetime import datetime
 
-from app.video_downloader import VercelVideoDownloader
-from app.videoframe_handler import VideoFrameHandler, NaiveVideoFrameCurator
+from app.features.video_processor.video_downloader import VercelVideoDownloader
+from app.features.video_processor.videoframe_handler import VideoFrameHandler, NaiveVideoFrameCurator
 from actverse_common.logging import (
     setup_logger, 
     log_event_received, 

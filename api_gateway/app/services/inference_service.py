@@ -9,3 +9,6 @@ def upload_json(data):
 def upload_overlaid_video(data):
     pass
     
+def run(data):
+    print('run inference')
+    pass

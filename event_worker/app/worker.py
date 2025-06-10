@@ -38,7 +38,7 @@ def process_event(data: Dict[str, Any], event_type: str) -> bool:
     
     try:
         # 다음 이벤트 발행 (기존 데이터 그대로 전달)
-        publish_event(logger, next_event, data)
+        # publish_event(logger, next_event, data)
         logger.info(f"다음 이벤트 발행: {next_event}, 데이터: {data}")
         
         return True

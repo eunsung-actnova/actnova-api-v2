@@ -1,12 +1,9 @@
 from fastapi import APIRouter, HTTPException
 import uuid
 
-from app.models.schemas import (
-    VideoDownload, 
-    VideoExtractFrames, 
-    VideoUpload, 
-    TaskResponse
-)
+from app.schemas.video import VideoDownload, VideoExtractFrames, VideoUpload
+from app.schemas.task import TaskResponse
+
 from actverse_common.messaging import publish_event
 from actverse_common.events import (
     EVENT_VIDEO_DOWNLOAD_REQUESTED,
@@ -41,7 +38,7 @@ async def download_video(data: VideoDownload):
             "file_path": data.file_path,
             "download_path": data.download_path
         }
-        publish_event(logger, EVENT_VIDEO_DOWNLOAD_REQUESTED, event_data)
+        # publish_event(logger, EVENT_VIDEO_DOWNLOAD_REQUESTED, event_data)
         
         return {"task_id": task_id}
     except Exception as e:
@@ -61,7 +58,7 @@ async def extract_frames(data: VideoExtractFrames):
             "file_path": data.file_path,
             "num_frames": data.num_frames
         }
-        publish_event(logger, EVENT_FRAMES_EXTRACTION_REQUESTED, event_data)
+        # publish_event(logger, EVENT_FRAMES_EXTRACTION_REQUESTED, event_data)
         
         return {"task_id": task_id}
     except Exception as e:
@@ -81,7 +78,7 @@ async def upload_video(data: VideoUpload):
             "file_path": data.file_path,
             "upload_path": data.upload_path
         }
-        publish_event(logger, EVENT_VIDEO_UPLOAD_REQUESTED, event_data)
+        # publish_event(logger, EVENT_VIDEO_UPLOAD_REQUESTED, event_data)
         
         return {"task_id": task_id}
     except Exception as e:

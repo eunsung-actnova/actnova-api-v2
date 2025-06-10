@@ -1,8 +1,6 @@
 # NVIDIA 공식 TensorRT 컨테이너(파이썬 포함)
 FROM nvcr.io/nvidia/tensorrt:24.03-py3
 
-ENV GITHUB_TOKEN=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
-
 WORKDIR /app
 
 # 공통 라이브러리 복사 및 설치 (필요시)

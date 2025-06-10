@@ -7,8 +7,6 @@ import os
 from shutil import copyfile
 from pathlib import Path
 
-from actnova.model.utils import select_device
-
 from actverse_common.logging import setup_logger
 
 import tensorrt as trt

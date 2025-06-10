@@ -5,8 +5,8 @@ import time
 from typing import Dict, Any
 from dotenv import load_dotenv
 
-from app.labelling_manager import SuperbLabellingManager
-from app.repository import LabelTaskRepository, LabelTask, LabellingStatus, PostgresLabelTaskRepository
+from app.features.labeling_manager.labelling_manager import SuperbLabellingManager
+from app.features.labeling_manager.repository import LabelTaskRepository, LabelTask, LabellingStatus, PostgresLabelTaskRepository
 from actverse_common.logging import (
     setup_logger, 
     log_event_received, 

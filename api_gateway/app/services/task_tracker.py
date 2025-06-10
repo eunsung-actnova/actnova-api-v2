@@ -4,7 +4,7 @@ import time
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.models.task import Task, TaskStep, Base
+from app.entities.task import Task, TaskStep, Base
 from actverse_common.logging import setup_logger
 from actverse_common.events import (EVENT_VIDEO_DOWNLOAD_REQUESTED, EVENT_VIDEO_DOWNLOADED,
                                EVENT_FRAMES_EXTRACTION_REQUESTED, EVENT_FRAMES_EXTRACTED,
@@ -121,10 +121,12 @@ class TaskTracker:
     
     def __init__(self, db_url):
         self.engine = create_engine(db_url)
-        Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.running = False
         self._consumer_thread = None
+    
+    def create_tables(self):
+        Base.metadata.create_all(self.engine)
     
     def _get_producer_channel(self):
         """메시지 발행용 채널 가져오기 - 매번 새 연결 생성"""
