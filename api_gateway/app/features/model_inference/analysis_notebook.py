@@ -8,13 +8,13 @@ from typing import Literal
 import nbformat
 import requests
 
-from actverse_common.logging import setup_logger
+
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 
-logger = setup_logger(service_name="analysis_notebook")
+logger = logging.getLogger(__name__)
 
 
 class GoogleDriveClient:

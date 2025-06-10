@@ -2,11 +2,8 @@ from fastapi import APIRouter, HTTPException, Path
 from app.schemas.task import TrainingCreate, TaskResponse
 import uuid
 
-from actverse_common.events import EVENT_TRAINING_REQUESTED
-from actverse_common.messaging import publish_event
-from actverse_common.logging import setup_logger
-
-logger = setup_logger(service_name="api_gateway-training")
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/training",

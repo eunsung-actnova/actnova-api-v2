@@ -1,10 +1,8 @@
 from fastapi import APIRouter, HTTPException, Path
 from app.schemas.task import InferenceCreate
-from actverse_common.events import EVENT_INFERENCE_REQUESTED
-from actverse_common.messaging import publish_event
-from actverse_common.logging import setup_logger
 
-logger = setup_logger(service_name="api_gateway-models")
+import logging
+logger = logging.getLogger(service_name="api_gateway-models")
 
 router = APIRouter(
     prefix="/models",

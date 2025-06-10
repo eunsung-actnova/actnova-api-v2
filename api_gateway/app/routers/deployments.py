@@ -1,11 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas.task import DeploymentCreate, TaskResponse
 
-from actverse_common.logging import setup_logger
-from actverse_common.events import EVENT_DEPLOYMENT_REQUESTED
-from actverse_common.messaging import publish_event
-
-logger = setup_logger(service_name="api_gateway-deployments")
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/deployments",

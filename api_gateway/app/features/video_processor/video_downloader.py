@@ -4,7 +4,7 @@ from urllib.parse import urlparse, unquote
 import os
 from tqdm import tqdm
 
-from actverse_common.utils import sanitize_filename
+from app.utils import sanitize_filename
 
 
 class VideoDownloader(ABC):

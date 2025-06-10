@@ -4,15 +4,6 @@ import uuid
 from app.schemas.video import VideoDownload, VideoExtractFrames, VideoUpload
 from app.schemas.task import TaskResponse
 
-from actverse_common.messaging import publish_event
-from actverse_common.events import (
-    EVENT_VIDEO_DOWNLOAD_REQUESTED,
-    EVENT_FRAMES_EXTRACTION_REQUESTED,
-    EVENT_VIDEO_UPLOAD_REQUESTED
-)
-from actverse_common.logging import setup_logger
-
-logger = setup_logger(service_name="api_gateway-video")
 
 router = APIRouter(
     prefix="/video",

@@ -1,11 +1,10 @@
 from fastapi import APIRouter, HTTPException, Path
 from app.schemas.label import LabelingCreate
 from app.schemas.task import TaskResponse
-from actverse_common.events import EVENT_LABELING_REQUESTED
-from actverse_common.messaging import publish_event
-from actverse_common.logging import setup_logger
 
-logger = setup_logger(service_name="api_gateway-labeling")
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/labeling",

@@ -4,9 +4,9 @@ import pandas as pd
 from typing import Dict, Any, Tuple
 
 from actnova.model import Yolov8KeypointEstimator
-from actverse_common.logging import setup_logger
 
-logger = setup_logger(service_name="model_inference")
+import logging
+logger = logging.getLogger(__name__)
 
 
 

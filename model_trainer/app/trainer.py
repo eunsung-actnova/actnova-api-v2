@@ -3,10 +3,11 @@ import os
 from actnova.model import Yolov8KeypointEstimator
 from actnova.model.utils import select_device
 
-from actverse_common.logging import setup_logger
+import logging
+logger = logging.getLogger(__name__)
+
 import traceback
 
-logger = setup_logger(service_name="model_trainer")
 MIN_MEMORY_MB = 2_000  # test
 
 

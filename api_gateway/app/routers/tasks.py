@@ -5,9 +5,8 @@ import time
 
 from app.celery.tasks import video_pipeline
 
-from actverse_common.logging import setup_logger
-
-logger = setup_logger(service_name="api_gateway-tasks")
+import logging
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(
