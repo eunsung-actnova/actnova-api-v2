@@ -1,7 +1,7 @@
-import os
-
-from api_gateway.app.repositories.fake_repository import FakeRepository
+from app.repositories.fake_repository import FakeRepository
 from app.services import video_service
+
+import os
 
 def test_비디오를_다운로드한다():
     sample_video = "https://ueqgyaa7lbfff1ok.public.blob.vercel-storage.com/cmam9n7gu0000lb04muxloagt/videos/Trial____17-Actverse-3DCOYW73YpN8wrOw0HwAKhmPlVTOqH.mp4"
@@ -53,6 +53,3 @@ def test_다양한_유형의_비디오를_mp4로_변환한다():
     
     for videofile in video_list:
         video_service.convert_video(videofile, convert_file_path)
-
-def test_다양한_유형의_비디오를_변환한다():
-    pass
