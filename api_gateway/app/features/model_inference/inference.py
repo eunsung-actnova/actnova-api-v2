@@ -101,7 +101,30 @@ class YOLOv8KeypointInference(ModelInference):
     def __init__(self, download_path: str):
         self.download_path = download_path
 
-    def __call__(self, video_file: str, model_path: str, task_id: str):
+    def predict_and_postprocess(self, video_file: str, model_path: str, task_id: str):
+        model = Yolov8KeypointEstimator(model_path)
+        prediction = model.predict(video_file, num_mice=1)
+        base_name, _ = os.path.splitext(os.path.basename(video_file))
+        result_video_file = self.download_path / f"{base_name}-Actverse.mp4" if task_id else None
+
+        model.save_result_video(video_file, prediction, output=result_video_file)
+
+        mean_num_mice = prediction.get_mean_num_mice()
+        mean_box_score = prediction.get_mean_box_score()
+        score_data = {"mean_num_mice": mean_num_mice, "mean_box_score": mean_box_score}
+        prediction_json = prediction.to_json()
+        csv_metadata, csv_results = convert_dict_to_dataframe(prediction_json)
+
+        return {
+            "score_data": score_data,
+            "prediction_json": prediction_json,
+            "csv_metadata": csv_metadata,
+            "csv_results": csv_results,
+            "result_video_file": result_video_file,
+        }
+
+    def save_inference_results(self, task_id: str, results: dict):
+        # 파일명 생성
         prediction_path = self.download_path / (
             f"prediction_{task_id}.json" if task_id else "prediction.json"
         )
@@ -117,45 +140,33 @@ class YOLOv8KeypointInference(ModelInference):
         prediction_csv_path = self.download_path / (
             f"prediction_{task_id}.zip" if task_id else "prediction.zip"
         )
-        base_name, ext = os.path.splitext(os.path.basename(video_file))
-        result_video_file = self.download_path / f"{base_name}-Actverse.mp4" if task_id else None
 
-        
-        model = Yolov8KeypointEstimator(model_path)
-
-        prediction = model.predict(video_file, num_mice=1)
-    
-        model.save_result_video(video_file, prediction, output=result_video_file)
-
-        mean_num_mice = prediction.get_mean_num_mice()
-        mean_box_score = prediction.get_mean_box_score()
-
-        # 평가 결과 저장
-        logger.info(f"Mean number of mice: {mean_num_mice}")
-        logger.info(f"Mean box score: {mean_box_score}")
-
-        score_data = ({"mean_num_mice": mean_num_mice, "mean_box_score": mean_box_score},)
+        # 저장
         with open(score_json_file, "w") as f:
-            json.dump(score_data, f, indent=None)
-
-        prediction_json = prediction.to_json()
+            json.dump(results["score_data"], f, indent=None)
         with open(prediction_path, "w") as f:
-            json.dump(prediction_json, f, indent=None)
-
-        csv_metadata, csv_results = convert_dict_to_dataframe(prediction_json)
-        csv_metadata.to_csv(csv_metadata_file, index=False)
-        csv_results.to_csv(csv_results_file, index=False)
-
-        # CSV 파일들을 ZIP으로 압축
+            json.dump(results["prediction_json"], f, indent=None)
+        results["csv_metadata"].to_csv(csv_metadata_file, index=False)
+        results["csv_results"].to_csv(csv_results_file, index=False)
         with zipfile.ZipFile(prediction_csv_path, "w", zipfile.ZIP_DEFLATED) as zipf:
             zipf.write(csv_metadata_file, arcname=csv_metadata_file.name)
             zipf.write(csv_results_file, arcname=csv_results_file.name)
 
+        return {
+            "prediction_path": str(prediction_path),
+            "prediction_csv_path": str(prediction_csv_path),
+            "result_video_file": results["result_video_file"],
+            "score_data": results["score_data"],
+        }
+
+    def __call__(self, video_file: str, model_path: str, task_id: str):
+        results = self.predict_and_postprocess(video_file, model_path, task_id)
+        saved = self.save_inference_results(task_id, results)
         return (
-            str(prediction_path),
-            str(prediction_csv_path),
-            result_video_file,
-            score_data,
+            saved["prediction_path"],
+            saved["prediction_csv_path"],
+            saved["result_video_file"],
+            saved["score_data"],
         )
 
 
