@@ -1,3 +1,4 @@
+import os
 import ffmpeg
 
 from app.features.video_processor.video_downloader import VercelVideoDownloader
@@ -25,23 +26,30 @@ def extract_frames(video_path: str, output_path: str):
 def convert_video(video_path: str, output_path: str):
     """
     주어진 비디오 파일을 mp4(H.264/AAC)로 변환한다.
-    
+
     ffmpeg-python 필요: pip install ffmpeg-python
     """
-    
-    (
-        ffmpeg.input(video_path)
-        .output(
-            output_path,
-            vcodec="libx264",
-            acodec="aac",
-            preset="fast",
-            crf=18,
-            movflags="faststart",
+    import sys
+    output_file = os.path.join(output_path, os.path.basename(video_path))
+
+    try:
+        (
+            ffmpeg.input(video_path)
+            .output(
+                output_file,
+                vcodec="libx264",
+                acodec="aac",
+                preset="fast",
+                crf=18,
+                movflags="faststart",
+            )
+            .overwrite_output()
+            .run(capture_stdout=True, capture_stderr=True)
         )
-        .overwrite_output()
-        .run(quiet=True)
-    )
+    except ffmpeg.Error as e:
+        print("ffmpeg error:", file=sys.stderr)
+        print(e.stderr.decode('utf8'), file=sys.stderr)
+        raise
 
 
 def parse_video_info(task_id: str, video_path: str, repository: BaseRepository):
